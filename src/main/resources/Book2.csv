@@ -1,0 +1,8 @@
+﻿"name_id, rollNo_id, department_id, result_id, pointer_id,doorNo_id,destination_id,work_type"
+"amar, 42, cse, pass, 8.6,,mumbai,EXTERNAL"
+"rohini, 21, ece, fail, 3.2,142,delhi,INTERNAL"
+"aman, 23, cse, pass, 8.9,153,hyderabad,INTERNALS"
+"rahul, 45, ee, fail, 4.6,165,ahmdabad,EXTERNAL"
+"pratik, 65, cse, pass, 7.2,111,nainital,INTERNAL"
+"raunak, 23, me, pass, 9.1,153,chennai,EXTERNAL"
+"suvam, 68, me, pass, 8.2,164,pune,INTERNAL"
