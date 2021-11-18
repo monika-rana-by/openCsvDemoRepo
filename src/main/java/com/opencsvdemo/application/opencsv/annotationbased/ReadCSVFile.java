@@ -1,12 +1,15 @@
 package com.opencsvdemo.application.opencsv.annotationbased;
 
-import com.opencsv.bean.CsvToBean;
-import com.opencsv.bean.CsvToBeanBuilder;
+import com.opencsv.CSVWriter;
+import com.opencsv.bean.*;
+import com.opencsv.exceptions.CsvDataTypeMismatchException;
 import com.opencsv.exceptions.CsvException;
+import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -15,28 +18,48 @@ import static java.util.stream.Collectors.groupingBy;
 
 @Slf4j
 public class ReadCSVFile {
-    public static void readDataLineByLine() throws FileNotFoundException {
+    public static void readDataLineByLine(MultipartFile file){
         List<ExceptionsClass> list = new ArrayList<>();
         try {
-            CsvToBean<Student> beans = new CsvToBeanBuilder<Student>(new FileReader("C:\\MONIKA\\Services\\Practice\\shoppingapp\\OpenCsvDemoApplication\\src\\main\\resources\\Book3.csv"))
-                    .withType(Student.class).withThrowExceptions(false).withIgnoreQuotations(true).build();
-            Stream<Student> StudentsList = beans.parse().stream();
-            StudentsList.forEach(ele ->{
-                System.out.println(ele);
-            });
 
-            Map<Long, List<CsvException>> postsPerType = beans.getCapturedExceptions().stream()
-                    .collect(groupingBy(CsvException::getLineNumber));
-            postsPerType.entrySet().forEach(entrySet ->{
-                list.add(new ExceptionsClass(entrySet.getKey(), entrySet.getValue().stream().map(element -> element.getCause() != null ? element.getCause().getLocalizedMessage(): element.getMessage()).collect(Collectors.toList())));
+            InputStream is = file.getInputStream();
+            BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+            CsvToBean<Student> beans = new CsvToBeanBuilder<Student>(br)
+                                        .withType(Student.class)
+                                        .withThrowExceptions(false)
+                                        .withIgnoreQuotations(true)
+                                        .withIgnoreLeadingWhiteSpace(true)
+                                        .build();
+            List<Student> studentsList = beans.parse();
+            log.info("printing the data successfully read from csv file - {}", studentsList);
+            beans.getCapturedExceptions().stream().forEach(exception ->{
+                list.add(new ExceptionsClass(exception.getLineNumber(), exception.getCause() != null ? exception.getCause().getLocalizedMessage(): exception.getMessage()));
             });
             System.out.println("printing the exception class"+list);
-
+            writeToCsv(list);
         } catch (Exception ex) {
             log.info("exception occured", ex);
         }
     }
-    public static void main(String[] args) throws FileNotFoundException {
-        readDataLineByLine();
+
+    private static void writeToCsv(List<ExceptionsClass> list) throws IOException, CsvRequiredFieldEmptyException, CsvDataTypeMismatchException {
+
+        final String CSV_LOCATION = "Employees.csv ";
+        CSVWriter csvWriter = new CSVWriter(new FileWriter(CSV_LOCATION), CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER,CSVWriter.NO_ESCAPE_CHARACTER,CSVWriter.DEFAULT_LINE_END);
+        String[] columns = new String[]
+                { "lineNo","exceptionMsg" };
+        csvWriter.writeNext(columns);
+        ColumnPositionMappingStrategy mappingStrategy=
+                new ColumnPositionMappingStrategy();
+        mappingStrategy.setType(ExceptionsClass.class);
+
+        mappingStrategy.setColumnMapping(columns);
+        StatefulBeanToCsvBuilder<ExceptionsClass> builder=
+                new StatefulBeanToCsvBuilder(csvWriter);
+        StatefulBeanToCsv beanWriter =
+                builder.withMappingStrategy(mappingStrategy).build();
+        beanWriter.write(list);
+        csvWriter.close();
     }
+
 }

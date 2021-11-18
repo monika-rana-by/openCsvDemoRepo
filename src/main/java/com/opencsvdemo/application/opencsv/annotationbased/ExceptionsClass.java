@@ -11,6 +11,6 @@ import java.util.List;
 @NoArgsConstructor
 @ToString
 public class ExceptionsClass {
-    private Long linNo;
-    private List<String> errors;
+    private Long lineNo;
+    private String exceptionMsg;
 }
